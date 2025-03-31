@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\src\Enums\UserRole;
+use App\Enums\UserRole;
 
 final class User extends BaseModel
 {
@@ -25,7 +25,7 @@ final class User extends BaseModel
         string $password,
         string $firstName,
         string $lastName,
-        UserRole $role = UserRole::USER
+        UserRole $role
     ): int {
         $hashedPassword = password_hash($password, PASSWORD_ARGON2ID);
 
@@ -34,7 +34,7 @@ final class User extends BaseModel
             'password' => $hashedPassword,
             'first_name' => $firstName,
             'last_name' => $lastName,
-            'role' => $role
+            'role' => $role->value
         ];
 
         return $this->create($data);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Enums\UserRole;
 use App\Models\User;
 use App\Utils\JWT;
 use App\Utils\Response;
@@ -54,7 +55,7 @@ final class AuthController
             $data['password'],
             $data['firstName'],
             $data['lastName'],
-            $data['role'] ?? 'user' // Default to 'user' role
+            UserRole::USER // Default to 'user' role
         );
 
         if (!$userId) {

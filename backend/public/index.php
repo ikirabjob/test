@@ -2,13 +2,15 @@
 
 declare(strict_types=1);
 
+use App\Services\Router;
+
 require_once __DIR__ . '/../vendor/autoload.php';
 
 $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
 $dotenv->load();
 
 error_reporting(E_ALL);
-ini_set('display_errors', $_ENV['APP_DEBUG'] ?? false);
+ini_set('display_errors', $_ENV['APP_DEBUG'] ?: false);
 
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization');
@@ -19,89 +21,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$request = $_SERVER['REQUEST_URI'];
-$method = $_SERVER['REQUEST_METHOD'];
-
-$path = parse_url($request, PHP_URL_PATH);
-$path = str_replace('/api', '', $path);
-$segments = explode('/', trim($path, '/'));
-
-try {
-    // Auth routes
-    if ($path === '/auth/register' && $method === 'POST') {
-        $controller = new App\Controllers\AuthController();
-        $controller->register();
-    } elseif ($path === '/auth/login' && $method === 'POST') {
-        $controller = new App\Controllers\AuthController();
-        $controller->login();
-    } elseif ($path === '/auth/me' && $method === 'GET') {
-        $controller = new App\Controllers\AuthController();
-        $controller->getCurrentUser();
-    }
-    // Event routes
-    elseif ($path === '/events' && $method === 'GET') {
-        $controller = new App\Controllers\EventController();
-        $controller->getEvents();
-    } elseif ($path === '/events' && $method === 'POST') {
-        $controller = new App\Controllers\EventController();
-        $controller->createEvent();
-    } elseif (preg_match('#^/events/(\d+)$#', $path, $matches) && $method === 'GET') {
-        $controller = new App\Controllers\EventController();
-        $controller->getEvent((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)$#', $path, $matches) && $method === 'PUT') {
-        $controller = new App\Controllers\EventController();
-        $controller->updateEvent((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)$#', $path, $matches) && $method === 'DELETE') {
-        $controller = new App\Controllers\EventController();
-        $controller->deleteEvent((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)/register$#', $path, $matches) && $method === 'POST') {
-        $controller = new App\Controllers\EventController();
-        $controller->registerForEvent((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)/cancel$#', $path, $matches) && $method === 'POST') {
-        $controller = new App\Controllers\EventController();
-        $controller->cancelRegistration((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)/attendees$#', $path, $matches) && $method === 'GET') {
-        $controller = new App\Controllers\EventController();
-        $controller->getRegisteredUsers((int)$matches[1]);
-    } elseif (preg_match('#^/events/(\d+)/attendees/(\d+)$#', $path, $matches) && $method === 'POST') {
-        $controller = new App\Controllers\EventController();
-        $controller->markAttendance((int)$matches[1], (int)$matches[2]);
-    } elseif ($path === '/events/search' && $method === 'GET') {
-        $controller = new App\Controllers\EventController();
-        $controller->searchEvents();
-    }
-    // Category routes
-    elseif ($path === '/categories' && $method === 'GET') {
-        $controller = new App\Controllers\CategoryController();
-        $controller->getCategories();
-    } elseif ($path === '/categories' && $method === 'POST') {
-        $controller = new App\Controllers\CategoryController();
-        $controller->createCategory();
-    } elseif (preg_match('#^/categories/(\d+)$#', $path, $matches) && $method === 'GET') {
-        $controller = new App\Controllers\CategoryController();
-        $controller->getCategory((int)$matches[1]);
-    } elseif (preg_match('#^/categories/(\d+)$#', $path, $matches) && $method === 'PUT') {
-        $controller = new App\Controllers\CategoryController();
-        $controller->updateCategory((int)$matches[1]);
-    } elseif (preg_match('#^/categories/(\d+)$#', $path, $matches) && $method === 'DELETE') {
-        $controller = new App\Controllers\CategoryController();
-        $controller->deleteCategory((int)$matches[1]);
-    } elseif (preg_match('#^/categories/(\d+)/events$#', $path, $matches) && $method === 'GET') {
-        $controller = new App\Controllers\EventController();
-        $controller->findEventsByCategory((int)$matches[1]);
-    }
-    // User-specific routes
-    elseif ($path === '/user/events' && $method === 'GET') {
-        $controller = new App\Controllers\UserController();
-        $controller->getUserEvents();
-    } elseif ($path === '/user/created-events' && $method === 'GET') {
-        $controller = new App\Controllers\UserController();
-        $controller->getCreatedEvents();
-    }
-    // Default - Not Found
-    else {
-        App\Utils\Response::error('Endpoint not found', 404);
-    }
-} catch (Exception $e) {
-    App\Utils\Response::error('Server error: ' . $e->getMessage(), 500);
-}
+$router = new Router();
+$router->add('/auth/register', ['controller' => 'Auth', 'action' => 'register', 'method' => 'POST']);
+$router->add('/auth/login', ['controller' => 'Auth', 'action' => 'login', 'method' => 'POST']);
+$router->add('/auth/me', ['controller' => 'Auth', 'action' => 'getCurrentUser', 'method' => 'GET']);
+$router->add('/events', ['controller' => 'Event', 'action' => 'getEvents', 'method' => 'GET']);
+$router->add('/events', ['controller' => 'Event', 'action' => 'createEvent', 'method' => 'POST']);
+$router->add('/events/{id}', ['controller' => 'Event', 'action' => 'getEvent', 'method' => 'GET']);
+$router->add('/events/{id}', ['controller' => 'Event', 'action' => 'updateEvent', 'method' => 'PUT']);
+$router->add('/events/{id}', ['controller' => 'Event', 'action' => 'deleteEvent', 'method' => 'DELETE']);
+$router->add('/events/{id}/register', ['controller' => 'Event', 'action' => 'registerForEvent', 'method' => 'POST']);
+$router->add('/events/{id}/unregister', ['controller' => 'Event', 'action' => 'unregisterForEvent', 'method' => 'DELETE']);
+$router->add('/events/{id}/attendees', ['controller' => 'Event', 'action' => 'getRegisteredUsers', 'method' => 'GET']);
+$router->add('/events/{id}/attendees/{userId}', ['controller' => 'Event', 'action' => 'markAttendance', 'method' => 'POST']);
+$router->add('/events/search', ['controller' => 'Event', 'action' => 'searchEvents', 'method' => 'GET']);
+$router->add('/categories', ['controller' => 'Category', 'action' => 'getCategories', 'method' => 'GET']);
+$router->add('/categories', ['controller' => 'Category', 'action' => 'createCategory', 'method' => 'POST']);
+$router->add('/categories/{id}', ['controller' => 'Category', 'action' => 'getCategory', 'method' => 'GET']);
+$router->add('/categories/{id}', ['controller' => 'Category', 'action' => 'updateCategory', 'method' => 'PUT']);
+$router->add('/categories/{id}', ['controller' => 'Category', 'action' => 'deleteCategory', 'method' => 'DELETE']);
+$router->add('/categories/{id}/events', ['controller' => 'Category', 'action' => 'getEventsByCategory', 'method' => 'GET']);
+$router->add('/user/events', ['controller' => 'User', 'action' => 'getUserEvents', 'method' => 'GET']);
+$router->add('/user/created-events', ['controller' => 'User', 'action' => 'getCreatedEvents', 'method' => 'GET']);
+$router->add('/user/registered-events', ['controller' => 'User', 'action' => 'getRegisteredEvents', 'method' => 'GET']);
+//echo "<pre>";
+//var_dump($_SERVER);
+//echo "</pre>";
+$router->dispatch($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

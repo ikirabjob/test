@@ -1,13 +1,13 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import authService from '../services/auth_service';
 
 // Import views
 import EventDashboard from '../components/EventDashboard.vue';
 import LoginView from '../components/LoginView.vue';
 import RegisterView from '../components/RegisterView.vue';
-import MyEventsView from '../components/MyEventsView.vue';
+//import MyEventsView from '../components/MyEventsView.vue';
 import EventDetailView from '../components/EventDetailView.vue';
-import NotFoundView from '../components/NotFoundView.vue';
+//import NotFoundView from '../components/NotFoundView.vue';
 
 const routes = [
     {
@@ -25,12 +25,12 @@ const routes = [
         component: EventDetailView,
         props: true
     },
-    {
-        path: '/my-events',
-        name: 'my-events',
-        component: MyEventsView,
-        meta: { requiresAuth: true }
-    },
+    // {
+    //     path: '/my-events',
+    //     name: 'my-events',
+    //     component: MyEventsView,
+    //     meta: { requiresAuth: true }
+    // },
     {
         path: '/login',
         name: 'login',
@@ -43,15 +43,15 @@ const routes = [
         component: RegisterView,
         meta: { guestOnly: true }
     },
-    {
-        path: '/:pathMatch(.*)*',
-        name: 'not-found',
-        component: NotFoundView
-    }
+    // {
+    //     path: '/:pathMatch(.*)*',
+    //     name: 'not-found',
+    //     component: NotFoundView
+    // }
 ];
 
 const router = createRouter({
-    history: createWebHistory(import.meta.env.BASE_URL),
+    history: createWebHashHistory(import.meta.env.BASE_URL),
     routes
 });
 

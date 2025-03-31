@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-use App\Config\Database;
+use App\Utils\Database;
 use Exception;
 
 abstract class BaseModel

@@ -1,0 +1,68 @@
+services:
+
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+      args:
+        PHP_VERSION: ${PHP_VERSION}
+        USERID: ${USERID}
+    volumes:
+      - './:/app/'
+    ports:
+      - "8080:8080"
+    links:
+      - worker
+    depends_on:
+      - postgres
+      - worker
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    environment:
+      - ENVIRONMENT=${ENVIRONMENT}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - './backend:/app/backend'
+      - '/vendor/'
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - './frontend:/app/frontend'
+      - '/node_modules'
+    environment:
+      - CHOKIDAR_USEPOLLING=true # Улучшает отслеживание файлов для HM
+    depends_on:
+      - worker
+
+  postgres:
+    build:
+      context: .
+      dockerfile: docker/postgres/Dockerfile
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+
+volumes:
+  postgres-data:
